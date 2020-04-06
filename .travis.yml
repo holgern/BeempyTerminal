@@ -1,0 +1,68 @@
+# After changing this file, check it on:
+#   http://lint.travis-ci.org/
+language: python
+sudo: false
+
+matrix:
+  include:
+    - os: linux
+      python: 3.6
+      env:
+        # - TOXENV=py36short
+        - BUILD_LINUX=yes
+
+    - os: osx
+      python: 3.6
+      osx_image: xcode9.3
+      language: objective-c
+      env:
+        - TRAVIS_PYTHON_VERSION=3.6
+
+cache: pip
+
+before_install:
+  - uname -a
+  - df -h
+  - ulimit -a
+  # - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then source util/travis_osx_install.sh; fi
+  - if [[ "$BUILD_LINUX" == "yes" ]]; then sudo apt-get install -y ruby ruby-dev build-essential; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install gnu-tar; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew upgrade python; fi
+  - which python3; python3 --version
+  - gem install fpm
+  - if [[ "$BUILD_LINUX" == "yes" ]]; then  pip install --upgrade pip; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then sudo pip3 install --upgrade pip; fi
+  - if [[ "$BUILD_LINUX" == "yes" ]]; then  pip install --upgrade wheel; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then sudo pip3 install --upgrade wheel; fi
+  - if [[ "$BUILD_LINUX" == "yes" ]]; then  pip install --upgrade setuptools; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then sudo pip3 install --upgrade setuptools; fi
+  - if [[ "$BUILD_LINUX" == "yes" ]]; then  pip install fbs PyQt5==5.13.1 PyInstaller==3.4 beem cryptography pycryptodome  python-dateutil; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then sudo pip3 install fbs PyQt5==5.13.1 PyInstaller==3.4 beem cryptography pycryptodome  python-dateutil; fi
+
+script:
+ - fbs freeze
+ - fbs installer
+
+after_success:
+ - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then shasum -a 256 ./target/beempyterminal.dmg >> ./target/beempyterminal.dmg.sha256; fi
+ - if [[ "$BUILD_LINUX" == "yes" ]]; then sha256sum ./target/beempyterminal.deb >> ./target/beempyterminal.deb.sha256;  fi
+
+deploy:
+ provider: releases
+  # NOTE updating the `api_key.secure`
+  # - go to: https://github.com/settings/tokens/new
+  # - generate new token using `public_repo` scope
+  # - encrypt it using: `travis encrypt API_KEY_HERE`
+  # - paste the output below
+ api_key:
+   secure: "jnqWYzmQlmea0jmxAWMah1Q30b5tTnumVK+DPDDqNMwYH45IBGSnHK1qBRCfPvCzaqvwG+n8Su/S6RymgB2m/R7+QRzS4TpsHv1TZPO3yagGag5prYx/G/gb0CYfET5hWjCpsRsg++0OcfqkYDKH4HkdmNBwUhp357wgYH6A4JqCkd44fObEOBdCBTDl0MO4gmX/bh/6h/cplAPBRBB0CM4Pnvfo4bGBHeh2fV3BMBJwJCpo8wFExTMA2Iw9djjD4bv/6UlzQDZWbDdWh0+EJnyS1tgAzHyuoh9m/iTy4itj0IIWqxW40O9vzpkEhmjxNhqW8vaTH75v7lPlmB79DNryA0V72sOMq0xzI3zymarLev+6tjh2z4xp0zqNJtxyQeVBZTV3vJhamOsMLyQuSOdqKsBSj8Y4yKG7wSB0Da1KIP1DyNjxoLPy24UGyDRlsFH1kMh1ar1B2aUn9jZkcPEU7IiQ5GccYk48oM/AzMfz3KH7U5dQBjAE/9Ma8Zl9w1SjvCulQXQVgKAik3emXMfjufcnDBECa+huqZdXWwrKS0ZBnnNm1yVQErXiO8hUR5lNDtRlRO1hNZF69aeEdpN3FV3+apfSM2P7shnHAQpH84Pn1PNZLXBdOAUQ/WxXIQpIGo1AgWviiVWzadWkwyooYUPReeEnPFsjc+9hUzA="
+
+ file_glob: true
+ file: ./target/*
+ skip_cleanup: true
+ on:
+   tags: true
+   
+notifications:
+  email:
+    on_success: never

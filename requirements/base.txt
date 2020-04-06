@@ -1,0 +1,7 @@
+fbs
+PyQt5==5.13.1
+PyInstaller==3.4
+beem
+cryptography
+pycryptodome
+python-dateutil
